@@ -25,5 +25,5 @@ services:
         # bind:
           # propagation: rshared
   database:
-    image: elasticsearch:5.5
+    image: elasticsearch:5.6
     network_mode: "service:server"
