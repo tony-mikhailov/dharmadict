@@ -9,7 +9,7 @@ services:
     # network_mode: "host"
     ports:
       - "3000:3000" # Server with static
-      - "5000:5000" # Client in dev mode
+      - "9200:9200" # DB for dev mode
     volumes:
       - type: bind # repo
         source: ./
