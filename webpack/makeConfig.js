@@ -3,7 +3,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CleanWebpackPlugin = require('clean-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const pkg = require('../package.json');
 
 function makeWebpackConfig(options) {
@@ -18,15 +18,8 @@ function makeWebpackConfig(options) {
     };
 
     plugins = [
-      new CleanWebpackPlugin(['client'], {
-        root: path.resolve(__dirname, '../', 'prod'),
-        allowExternal: true
-      }),
-      new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.min.js'),
-      new webpack.optimize.UglifyJsPlugin({
-        compress: {
-          warnings: false
-        }
+      new CleanWebpackPlugin({
+        output: path.resolve(__dirname, '../', 'prod'),
       }),
       new HtmlWebpackPlugin({
         template: './app/index.html',
@@ -72,55 +65,68 @@ function makeWebpackConfig(options) {
     entry: entry,
     output: {
       path: path.resolve(__dirname, '../', 'prod', 'client'),
-      filename: 'bundle.min.js'
+      filename: '[name].[fullhash:8].js',
+      sourceMapFilename: '[name].[fullhash:8].map',
+      chunkFilename: '[id].[fullhash:8].js'
     },
     module: {
-      loaders: [
+      rules: [
         {
-          test: /\.js$/, // Transform all .js files required somewhere within an entry point...
-          loader: 'babel', // ...with the specified loaders...
-          exclude: path.join(__dirname, '../', '/node_modules/'), // ...except for the node_modules folder.
-          query: {
-            plugins: options.prod ? [
-              ["react-remove-properties", {"properties": ["data-test-id"]}]
-            ] : []
-          }
-        }, {
           test: /\.json$/,
-          loader: 'json-loader'
-        }, {
-          test: /\.css$/, // Transform all .css files required somewhere within an entry point...
-          loaders: ['style-loader', 'css-loader', 'postcss-loader'] // ...with PostCSS
-        }, {
+          use: ['json-loader']
+        },  {
           test: /\.(png|jpg|gif)$/,
-          loader: 'url-loader?limit=200000&context=./assets'
+          use: ['url-loader?limit=200000&context=./assets']
         }, {
           test: /\.(ttf|ico)$/,
-          loader: 'file?name=[name].[ext]'
-        }
+          use: ['file?name=[name].[ext]']
+        },
+        {
+          test: /\.css$/, 
+          use: [
+            "style-loader",
+            "css-loader",
+            {
+              loader: "postcss-loader",
+              options: {
+                postcssOptions: {
+                  plugins: [
+                    ["postcss-import",
+                      {
+                        onImport: function (files) {
+                          files.forEach(this.addDependency)
+                        }.bind(this)
+                      }
+                    ],
+                    'postcss-simple-vars',
+                    'postcss-focus',
+                    ['autoprefixer',
+                      {
+                        browsers: ['last 2 versions', 'IE > 8']
+                      }
+                    ],
+                    [
+                      'postcss-reporter',
+                      {
+                        clearMessages: true
+                      },
+                    ],
+                  ],
+                },
+              },
+            },
+          ],
+        },
       ]
     },
     plugins: plugins,
-    postcss: function () {
-      return [
-        require('postcss-import')({
-          onImport: function (files) {
-            files.forEach(this.addDependency)
-          }.bind(this)
-        }),
-        require('postcss-simple-vars')(),
-        require('postcss-focus')(),
-        require('autoprefixer')({
-          browsers: ['last 2 versions', 'IE > 8']
-        }),
-        require('postcss-reporter')({
-          clearMessages: true
-        })
-      ]
+    optimization: {
+      splitChunks: {
+        chunks: "all",
+      }
     },
     target: 'web',
     stats: !options.prod,
-    progress: true
   }
 }
 
