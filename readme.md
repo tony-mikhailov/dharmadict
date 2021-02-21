@@ -121,11 +121,11 @@ curl -XGET 'http://localhost:9200/_snapshot/my_backup'
 3. Make a snapshot of "dharmadict" index
 
 ```
-curl -XPUT 'http://localhost:9200/_snapshot/my_backup/snap1' -H 'Content-Type: application/json' -d' {
+curl -XPUT 'http://localhost:9200/_snapshot/my_backup/snap1' {
     "indices": "dharmadict",
     "ignore_unavailable": true,
     "include_global_state": false
-}'
+}
 ```
 
 This will create "/path_to_backups/my_backup/snap1" folder and fill it up with elastic snapshot data.
